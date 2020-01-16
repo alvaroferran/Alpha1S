@@ -13,14 +13,17 @@ class Alpha1S:
         self.__bt = self.Alpha1S_bluetooth(name)
         print("Done")
 
-    def get_battery(self):
+    def battery(self):
         """
-        Get battery diagnostics.
-        Returns dictionary with fields:
+        Get battery information.
+
+        Returns:
+        dict: Dictionary with fields:
             percent: Remaining battery capacity
-            state:  0: Battery not charging
-                    1: Battery charging
-                    2: Battery not present
+            state:
+                0: Battery not charging
+                1: Battery charging
+                2: Battery not present
             mV: Battery voltage in mV
         """
         msg = b'\x18\x00'
@@ -35,24 +38,35 @@ class Alpha1S:
             return battery
         return None
 
-    def servo_read(self, id):
+    def servo_read(self, ID):
         """
-        Read the position of the specified servo. Returns an integer.
+        Read the position of a single servo.
         Note: Reading a servo will automatically power it off.
+
+        Parameters:
+        ID: Servo id between 0-15, integer
+
+        Returns:
+        int: Position of the servo between 0-180
         """
-        msg = b'\x24' + bytes([id+1])
+        # Adding 1 to the ID because the robot starts counting at 1
+        ID = bytes([ID+1])
+        msg = b'\x24' + ID
         parameter_len = 2
         ans = self.__bt.read(msg, parameter_len)
         if ans is not None:
             # Check that the received value corresponds to the specified servo
-            if ans[:1] == bytes([id+1]):
+            if ans[:1] == ID:
                 return int.from_bytes(ans[1:], "big")
         return None
 
     def servo_read_all(self):
         """
-        Read a list of integer positions corresponding to all the servos.
+        Read the positions for all the servos simultaneously.
         Note: Reading a servo will automatically power it off.
+
+        Returns:
+        [int]: List of 16 integer positions between 0-180
         """
         msg = b'\x25\x00'
         parameter_len = 16
@@ -61,8 +75,62 @@ class Alpha1S:
             return [x for x in ans]
         return None
 
-    def servo_write(self, angle):
-        pass
+    def servo_write(self, ID, angle, travelling=20):
+        """
+        Set a specific servo to an angle.
+
+        Parameters:
+        ID: Servo id between 0-15, integer
+        angle: Angle between 0-180, integer
+        travelling: Time the servo takes to move to the position
+
+        Returns:
+        int: Error code:
+            0: Success
+            1: Wrong servo ID
+            2: Allow servo angle excess
+            3: No reply from servo
+        """
+        # Adding 1 to the ID because the robot starts counting at 1
+        ID = bytes([ID+1])
+        angle = bytes([angle])
+        run_time = bytes([travelling])
+        time_frames = b'\x00\x10'
+        msg = b'\x22' + ID + angle + run_time + time_frames
+        parameter_len = 2
+        ans = self.__bt.read(msg, parameter_len)
+        if ans is not None:
+            # Check that the received value corresponds to the specified servo
+            if ans[:1] == ID:
+                return int.from_bytes(ans[1:], "big")
+        return None
+
+    def servo_write_all(self, angles, travelling=20):
+        """
+        Set all servos to the specified positions simultaneously.
+
+        Parameters:
+        angles: List of integer angles between 0-180
+        travelling: Time the servo takes to move to the position, integer
+
+        Returns:
+        [int]: List of error codes for each servo:
+            0: Success
+            1: Wrong servo ID
+            2: Allow servo angle excess
+            3: No reply from servo
+        """
+        if len(angles) != 16:
+            return None
+        angles = bytearray(angles)
+        run_time = bytes([travelling])
+        time_frames = b'\x00\x10'
+        msg = b'\x23' + angles + run_time + time_frames
+        parameter_len = 16
+        ans = self.__bt.read(msg, parameter_len)
+        if ans is not None:
+            return [x for x in ans]
+        return None
 
     def servo_off(self):
         """
@@ -77,7 +145,7 @@ class Alpha1S:
         Class to handle the Alpha1S' bluetooth protocol
         Download Bluetooth protocol datasheet from
         https://assets-new.ubtrobot.com/downloads/Alpha%201%20Series%20Bluetooth%20communication%20protocol?download
-        """# noqa
+        """  # noqa
 
         def __init__(self, name):
             address = self.__discover(name)
@@ -112,6 +180,7 @@ class Alpha1S:
         def read(self, msg, ans_len):
             """
             Use the write() function to send a command and receive its answer.
+
             Returns the 'Parameter' field in bytes if the message was received
             correctly, None otherwise.
             """
@@ -143,6 +212,7 @@ class Alpha1S:
             """
             Check that the received message follows the correct format and that
             the check byte is correct.
+
             Returns True if message is correct, False otherwise
             """
             msg = bytearray(msg)
