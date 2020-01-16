@@ -17,26 +17,49 @@ class Alpha1S:
         """
         Get battery diagnostics.
         Returns dictionary with fields:
-            mV: Battery voltage in mV
+            percent: Remaining battery capacity
             state:  0: Battery not charging
                     1: Battery charging
                     2: Battery not present
-            percent: Remaining battery capacity
+            mV: Battery voltage in mV
         """
         msg = b'\x18\x00'
         parameter_len = 4
         ans = self.__bt.read(msg, parameter_len)
         if ans is not None:
             battery = {
-                "mV": int.from_bytes(ans[:2], "big"),
+                "percent": int.from_bytes(ans[3:], "big"),
                 "state": int.from_bytes(ans[2:3], "big"),
-                "percent": int.from_bytes(ans[3:], "big")
+                "mV": int.from_bytes(ans[:2], "big")
             }
             return battery
         return None
 
-    def servo_read(self):
-        pass
+    def servo_read(self, id):
+        """
+        Read the position of the specified servo. Returns an integer.
+        Note: Reading a servo will automatically power it off.
+        """
+        msg = b'\x24' + bytes([id+1])
+        parameter_len = 2
+        ans = self.__bt.read(msg, parameter_len)
+        if ans is not None:
+            # Check that the received value corresponds to the specified servo
+            if ans[:1] == bytes([id+1]):
+                return int.from_bytes(ans[1:], "big")
+        return None
+
+    def servo_read_all(self):
+        """
+        Read a list of integer positions corresponding to all the servos.
+        Note: Reading a servo will automatically power it off.
+        """
+        msg = b'\x25\x00'
+        parameter_len = 16
+        ans = self.__bt.read(msg, parameter_len)
+        if ans is not None:
+            return [x for x in ans]
+        return None
 
     def servo_write(self, angle):
         pass
