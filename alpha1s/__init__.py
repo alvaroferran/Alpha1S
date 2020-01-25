@@ -9,9 +9,7 @@ class Alpha1S:
 
     def __init__(self):
         name = "ALPHA 1S"
-        print(f"Connecting to {name}... ", end="")
         self.__bt = self.Alpha1S_bluetooth(name)
-        print("Done")
 
     def battery(self):
         """
@@ -38,25 +36,25 @@ class Alpha1S:
             return battery
         return None
 
-    def servo_read(self, ID):
+    def servo_read(self, servo_id):
         """
         Read the position of a single servo.
         Note: Reading a servo will automatically power it off.
 
         Parameters:
-        ID: Servo id between 0-15, integer
+        servo_id: Servo id between 0-15, integer
 
         Returns:
         int: Position of the servo between 0-180
         """
-        # Adding 1 to the ID because the robot starts counting at 1
-        ID = bytes([ID+1])
-        msg = b'\x24' + ID
+        # Adding 1 to the servo_id because the robot starts counting at 1
+        servo_id = bytes([servo_id+1])
+        msg = b'\x24' + servo_id
         parameter_len = 2
         ans = self.__bt.read(msg, parameter_len)
         if ans is not None:
             # Check that the received value corresponds to the specified servo
-            if ans[:1] == ID:
+            if ans[:1] == servo_id:
                 return int.from_bytes(ans[1:], "big")
         return None
 
@@ -75,33 +73,33 @@ class Alpha1S:
             return [x for x in ans]
         return None
 
-    def servo_write(self, ID, angle, travelling=20):
+    def servo_write(self, servo_id, angle, travelling=20):
         """
         Set a specific servo to an angle.
 
         Parameters:
-        ID: Servo id between 0-15, integer
+        servo_id: Servo id between 0-15, integer
         angle: Angle between 0-180, integer
         travelling: Time the servo takes to move to the position
 
         Returns:
         int: Error code:
             0: Success
-            1: Wrong servo ID
+            1: Wrong servo servo_id
             2: Allow servo angle excess
             3: No reply from servo
         """
-        # Adding 1 to the ID because the robot starts counting at 1
-        ID = bytes([ID+1])
+        # Adding 1 to the servo_id because the robot starts counting at 1
+        servo_id = bytes([servo_id+1])
         angle = bytes([angle])
         run_time = bytes([travelling])
         time_frames = b'\x00\x10'
-        msg = b'\x22' + ID + angle + run_time + time_frames
+        msg = b'\x22' + servo_id + angle + run_time + time_frames
         parameter_len = 2
         ans = self.__bt.read(msg, parameter_len)
         if ans is not None:
             # Check that the received value corresponds to the specified servo
-            if ans[:1] == ID:
+            if ans[:1] == servo_id:
                 return int.from_bytes(ans[1:], "big")
         return None
 
@@ -116,7 +114,7 @@ class Alpha1S:
         Returns:
         [int]: List of error codes for each servo:
             0: Success
-            1: Wrong servo ID
+            1: Wrong servo servo_id
             2: Allow servo angle excess
             3: No reply from servo
         """
