@@ -6,7 +6,7 @@ import setuptools
 
 setuptools.setup(
     name="alpha1s",
-    version="0.0.1",
+    version="0.0.2",
     author="Alvaro Ferran",
     author_email="alvaroferran@gmail.com",
     description="Class to control Ubtech Alpha1S robot",

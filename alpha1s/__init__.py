@@ -35,6 +35,20 @@ class Alpha1S:
             return battery
         return None
 
+    def leds(self, state):
+        """
+        Turn LEDs on or off.
+
+        Parameters:
+        state: Set True to turn on, False to turn off.
+        """
+        if state:
+            state = b'\x01'
+        else:
+            state = b'\x00'
+        msg = b'\x0D' + state
+        self.__bt.write(msg)
+
     def servo_read(self, servo_id):
         """
         Read the position of a single servo.
