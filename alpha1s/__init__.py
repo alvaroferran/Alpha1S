@@ -7,8 +7,7 @@ class Alpha1S:
     Class to control the Ubtech Alpha 1S robot
     """
 
-    def __init__(self):
-        name = "ALPHA 1S"
+    def __init__(self, name="ALPHA 1S"):
         self.__bt = self.Alpha1S_bluetooth(name)
 
     def battery(self):
